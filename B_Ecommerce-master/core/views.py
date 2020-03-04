@@ -15,6 +15,7 @@ import random
 import string
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+search_term=''
 
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -23,7 +24,18 @@ class HomeView(ListView):
     model = Item
     paginate_by = 10
     template_name = "home-page.html"
-
+    def get_queryset(self):
+        try:
+            a = self.request.GET.get('search_item',)
+        except KeyError:
+            a = None
+        if a:
+            item_list = Item.objects.filter(
+                title__icontains=a,
+            )
+        else:
+            item_list = Item.objects.filter(self.request.user)
+        return item_list
 class OrderSummaryView(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
 
