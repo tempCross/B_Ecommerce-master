@@ -24,7 +24,7 @@ class HomeView(ListView):
     model = Item
     paginate_by = 10
     template_name = "home-page.html"
-    def get_queryset(self):
+    def get_queryset(self, *args, **kwargs):
         try:
             a = self.request.GET.get('search_item',)
         except KeyError:
@@ -34,7 +34,7 @@ class HomeView(ListView):
                 title__icontains=a,
             )
         else:
-            item_list = Item.objects.filter(self.request.user)
+            item_list = Item.objects.filter(description=self.request.user)
         return item_list
 class OrderSummaryView(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
