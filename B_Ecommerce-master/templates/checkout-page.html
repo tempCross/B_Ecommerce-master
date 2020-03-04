@@ -96,7 +96,7 @@
             
 
               <h3>Billing Address</h3>
-                <div class='hideable_shipping_form'>
+                <div class='hideable_billing_form'>
                 <!--address-->
                 <div class="md-form mb-5">
                   <input type="text" id="billing_address" class="form-control" name="billing_address" placeholder="1234 Main St" />
@@ -141,7 +141,7 @@
                 </div>
                 <div class="custom-control custom-checkbox">
                   <input type="checkbox" class="custom-control-input" name="set_default_billing" id="set_default_billing">
-                  <label class="custom-control-label" for="same-address">Save as my default billing
+                  <label class="custom-control-label" for="set_default_billing">Save as my default billing
                     address</label>
                 </div>
                </div>
@@ -191,4 +191,30 @@
   </main>
   <!--Main layout-->
   {% endblock content %}
- 
+  {% block extra_scripts %}
+  <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js'></script>
+  <script >
+    var hideable_shipping_form = $('.hideable_shipping_form');
+    var hideable_billing_form = $('.hideable_billing_form');
+    
+    var use_default_shipping = document.querySelector("input[name=use_default_shipping]");
+    var use_default_billing = document.querySelector("input[name=use_default_billing]");
+    
+    use_default_shipping.addEventListener('change', function() {
+      if (this.checked) {
+        hideable_shipping_form.hide();
+      } else {
+        hideable_shipping_form.show();
+      }
+    })
+    
+    use_default_billing.addEventListener('change', function() {
+      if (this.checked) {
+        hideable_billing_form.hide();
+      } else {
+        hideable_billing_form.show();
+      }
+    })
+    
+    </script>
+  {% endblock extra_scripts %}

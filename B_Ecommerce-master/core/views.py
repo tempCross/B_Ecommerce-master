@@ -220,7 +220,7 @@ class CheckoutView(View):
 
                     else:
                         messages.info(self.request, "Please fill in the required shipping address fields")
-                        
+                        return redirect("core:checkout")
                 use_default_billing = form.cleaned_data.get('use_default_billing')
                 same_billing_address = form.cleaned_data.get('same_billing_address')
 
