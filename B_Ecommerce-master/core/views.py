@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund
 from django.utils import timezone
 from .forms import CheckoutForm, CouponForm, RefundForm
+from .filter import ItemFilter
 
 import stripe
 import random
@@ -20,6 +21,28 @@ search_term=''
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
+class FilterView(ListView):
+    model = Item
+    paginate_by = 10
+    template_name = "filter-view.html"
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = ItemFilter(self.request.GET, queryset=Item.objects.filter(category__iexact='OW'))
+        return context
+
+    def get_queryset(self, *args, **kwargs):
+        try:
+            a = self.request.GET.get('search_item',)
+        except KeyError:
+            a = None
+        if a:
+            item_list = Item.objects.filter(
+                title__icontains=a,
+            )
+        else:
+            item_list = Item.objects.all()
+        return item_list
+    
 class HomeView(ListView):
     model = Item
     paginate_by = 10
@@ -36,6 +59,10 @@ class HomeView(ListView):
         else:
             item_list = Item.objects.all()
         return item_list
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = ItemFilter(self.request.GET, queryset=self.get_queryset())
+        return context
 class OrderSummaryView(LoginRequiredMixin, View):
     def get(self, *args, **kwargs):
 
