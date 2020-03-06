@@ -6,9 +6,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView, View
 from django.shortcuts import redirect
-from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund
+from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
 from django.utils import timezone
-from .forms import CheckoutForm, CouponForm, RefundForm
+from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
 from .filter import ItemFilter
 
 import stripe
@@ -21,13 +21,13 @@ search_term=''
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
 
-class FilterView(ListView):
+class FilterShirtView(ListView):
     model = Item
     paginate_by = 10
-    template_name = "filter-view.html"
+    template_name = "filter-shirt-view.html"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['filter'] = ItemFilter(self.request.GET, queryset=Item.objects.filter(category__iexact='OW'))
+        context['filter'] = ItemFilter(self.request.GET, queryset=Item.objects.filter(category__iexact='S'))
         return context
 
     def get_queryset(self, *args, **kwargs):
@@ -86,6 +86,19 @@ class PaymentView(View):
                 'order': order,
                 'DISPLAY_COUPON_FORM': False
             }
+            userprofile = self.request.user.userprofile
+            messages.warning(self.request, "User profile %s" % userprofile.stripe_customer_id)
+            if userprofile.one_click_purchasing:
+                cards = stripe.Customer.list_sources(
+                    userprofile.stripe_customer_id,
+                    limit=3,
+                    object='card'
+                )
+                card_list = cards['data']
+                if len(card_list) > 0:
+                    context.update({
+                        'card': card_list[0]
+                    })
             return render(self.request, "payment.html", context)   
        else:
            messages.warning(self.request, "You have not added a billing address")
@@ -93,15 +106,51 @@ class PaymentView(View):
 
     def post(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
-        token = self.request.POST.get('stripeToken')
+        form = PaymentForm(self.request.POST)
+        userprofile = UserProfile.objects.get(user=self.request.user)
+        messages.warning(self.request, "User profile %s" % userprofile.stripe_customer_id)
+       
+        if form.is_valid():
+            token = form.cleaned_data.get('stripeToken')
+            save = form.cleaned_data.get('save')
+            use_default = form.cleaned_data.get('use_default')
+
+            if save:
+                # allow to fetch cards
+                if userprofile.stripe_customer_id != '' and userprofile.stripe_customer_id is not None:
+                    customer = stripe.Customer.retrieve(
+                        userprofile.stripe_customer_id)
+                    customer.sources.create(source=token)
+                    userprofile.stripe_customer_id = customer['id']
+                    userprofile.one_click_purchasing = True
+                    userprofile.save()
+
+                else:
+                    customer = stripe.Customer.create(
+                            email=self.request.user.email,
+                        )
+                    customer.sources.create(source=token)
+                    userprofile.stripe_customer_id = customer['id']
+                    userprofile.one_click_purchasing = True
+                    userprofile.save()
+
         amount=int(order.get_total() * 100) # cents
+
         try:
-            # Use Stripe's library to make requests...
-            charge = stripe.Charge.create(
-            amount=amount, # cents
-            currency="usd",
-            source=token
-        )
+
+            if use_default or save:
+                # Use Stripe's library to make requests...
+                charge = stripe.Charge.create(
+                    amount=amount, # cents
+                    currency="usd",
+                    customer=userprofile.stripe_customer_id
+                )
+            else:
+                charge = stripe.Charge.create(
+                    amount=amount, # cents
+                    currency="usd",
+                    source=token
+                )
 
             # create payment
             payment = Payment()
@@ -139,7 +188,7 @@ class PaymentView(View):
 
         except stripe.error.InvalidRequestError as e:
         # Invalid parameters were supplied to Stripe's API
-            messages.warning(self.request, "Invalid parameters")
+            messages.warning(self.request, "Invalid parameters %s" %e.error.message)
             return redirect("/")
 
         except stripe.error.AuthenticationError as e:

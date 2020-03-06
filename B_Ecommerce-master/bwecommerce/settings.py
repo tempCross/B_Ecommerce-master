@@ -97,6 +97,7 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend'
     
 )
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
@@ -104,4 +105,5 @@ LOGIN_REDIRECT_URL = '/'
 # CRISPY FORMS
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-STRIPE_SECRET_KEY = 'sk_test_4eC39HqLyjWDarjtT1zdp7dc'
+STRIPE_SECRET_KEY = 'sk_test_RrST84B0fJ1vCOIKUbOHXgMq008YlvW79E'
+
