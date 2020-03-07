@@ -108,7 +108,7 @@ class PaymentView(View):
         order = Order.objects.get(user=self.request.user, ordered=False)
         form = PaymentForm(self.request.POST)
         userprofile = UserProfile.objects.get(user=self.request.user)
-        messages.warning(self.request, "User profile %s" % userprofile.stripe_customer_id)
+        # messages.warning(self.request, "User profile %s" % userprofile.stripe_customer_id)
        
         if form.is_valid():
             token = form.cleaned_data.get('stripeToken')

@@ -26,7 +26,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     stripe_customer_id = models.CharField(max_length=50, blank=True, null=True)
-    one_click_purchasing = models.BooleanField(default=False)
+    one_click_purchasing = models.BooleanField()
 
     def __str__(self):
         return self.user.username
@@ -80,6 +80,12 @@ class OrderItem(models.Model):
         if self.item.discount_price:
             return self.get_total_discount_item_price()
         return self.get_total_item_price()
+    
+    def get_total_quantity(self):
+        total = 0
+        for order_item in self.items.all():
+            total += order_item.quantity
+        return total
 
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -124,6 +130,12 @@ class Order(models.Model):
         if self.coupon:
             total -= self.coupon.amount
         return total
+    
+    def get_total_quantity(self):
+        total = 0
+        for order_item in self.items.all():
+            total += order_item.quantity()
+        return total
 
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -143,12 +155,14 @@ class Address(models.Model):
         
 class Payment(models.Model):
     stripe_charge_id = models.CharField(max_length=50)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.SET_NULL, blank=True, null=True)
+    
     amount = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.user.username
+    # def __str__(self):
+    #     return self.user.username
 
     
 
