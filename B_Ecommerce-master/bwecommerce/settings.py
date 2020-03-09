@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'django_countries',
     'django_filters',
+    'paypal.standard.ipn',
 
     'core'
     
@@ -107,3 +108,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 STRIPE_SECRET_KEY = 'sk_test_RrST84B0fJ1vCOIKUbOHXgMq008YlvW79E'
 
+PAYPAL_RECEIVER_EMAIL = 'bilaal.williams@itsektion.com'
+
+PAYPAL_TEST = True
