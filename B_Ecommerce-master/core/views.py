@@ -401,8 +401,8 @@ def process_payment(request):
         'invoice': str(order.ref_code),
         'currency_code': 'USD',
         'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
-        'return_url': 'core:payment-done',
-        'cancel_return': 'core:payment-cancelled',
+        'return_url': 'http://{}{}'.format(host, reverse('core:payment-done')),
+        'cancel_return': 'http://{}{}'.format(host,reverse('core:payment-cancelled')),
     }
 
     form = PayPalPaymentsForm(initial=paypal_dict)
