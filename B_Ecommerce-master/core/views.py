@@ -391,6 +391,7 @@ def products(request):
 def process_payment(request):
     order = Order.objects.get(user=request.user, ordered=False)
     host = request.get_host()
+    order.ref_code = create_ref_code()
     amount=int(order.get_total()) # cents
     str(host)
     print('%s' % host)
@@ -410,6 +411,14 @@ def process_payment(request):
 
 @csrf_exempt
 def payment_done(request):
+    order = Order.objects.get(user=request.user, ordered=False)
+    order_items = order.items.all()
+    order_items.update(ordered=True)
+    for item in order_items:
+        item.save()
+
+    order.ordered = True
+    order.save()
     return render(request, 'payment-done.html')
 
 @csrf_exempt

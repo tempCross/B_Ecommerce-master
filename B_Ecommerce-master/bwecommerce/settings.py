@@ -5,7 +5,7 @@ ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 DEBUG = True
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '-05sgp9!deq=q1nltm@^^2cc+v29i(tyybv3v2t77qi66czazj'
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10fe65e0.ngrok.io', 'localhost']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -108,6 +108,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 STRIPE_SECRET_KEY = 'sk_test_RrST84B0fJ1vCOIKUbOHXgMq008YlvW79E'
 
-PAYPAL_RECEIVER_EMAIL = 'bilaal.williams@itsektion.com'
+PAYPAL_RECEIVER_EMAIL = 'sb-zw6or1172130@business.example.com'
 
 PAYPAL_TEST = True
