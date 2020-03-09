@@ -1,5 +1,9 @@
 from django.conf import settings
 from django.contrib import messages
+from decimal import Decimal
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from paypal.standard.forms import PayPalPaymentsForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -77,6 +81,7 @@ class OrderSummaryView(LoginRequiredMixin, View):
             messages.warning(self.request, "You don't have an active order")
             return redirect("/")
 
+    
 class PaymentView(View):
     def get(self, *args, **kwargs):
         #order
@@ -370,7 +375,7 @@ class CheckoutView(View):
                 if payment_option == 'S':
                     return redirect('core:payment', payment_option='stripe')
                 elif payment_option == 'P':
-                    return redirect('core:payment', payment_option='paypal')
+                    return redirect('core:process-payment')
                 #TODO add redirect to the selected payment option
                 else:
                     messages.warning(self.request,"Invalid payment option")
@@ -382,6 +387,34 @@ class CheckoutView(View):
       
 def products(request):
     return render(request, "product-page.html")
+
+def process_payment(request):
+    order = Order.objects.get(user=request.user, ordered=False)
+    host = request.get_host()
+    amount=int(order.get_total()) # cents
+    str(host)
+    print('%s' % host)
+    paypal_dict = {
+        'business': settings.PAYPAL_RECEIVER_EMAIL,
+        'amount': '%2f' % amount,
+        'item_name': order.ref_code,
+        'invoice': str(order.ref_code),
+        'currency_code': 'USD',
+        'notify_url': 'http://{}{}'.format(host, reverse('paypal-ipn')),
+        'return_url': 'core:payment-done',
+        'cancel_return': 'core:payment-cancelled',
+    }
+
+    form = PayPalPaymentsForm(initial=paypal_dict)
+    return render(request, 'process-payment.html', {'order': order, 'form': form})
+
+@csrf_exempt
+def payment_done(request):
+    return render(request, 'payment-done.html')
+
+@csrf_exempt
+def payment_cancelled(request):
+    return render(request, 'payment-cancelled.html')
 
 class ItemDetailView(DetailView):
     model = Item
