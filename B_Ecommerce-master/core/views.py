@@ -419,6 +419,12 @@ def payment_done(request):
 
     order.ordered = True
     order.save()
+
+    payment = Payment()
+    payment.paypal_charge_id = create_ref_code()
+    payment.user = request.user
+    payment.amount = order.get_total()
+    payment.save()
     return render(request, 'payment-done.html')
 
 @csrf_exempt
