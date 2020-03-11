@@ -126,9 +126,7 @@ class PaymentView(View):
                     customer = stripe.Customer.retrieve(
                         userprofile.stripe_customer_id)
                     customer.sources.create(source=token)
-                    userprofile.stripe_customer_id = customer['id']
-                    userprofile.one_click_purchasing = True
-                    userprofile.save()
+                 
 
                 else:
                     customer = stripe.Customer.create(
