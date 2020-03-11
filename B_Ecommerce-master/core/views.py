@@ -46,6 +46,28 @@ class FilterShirtView(ListView):
         else:
             item_list = Item.objects.all()
         return item_list
+
+class FilterSportwearView(ListView):
+    model = Item
+    paginate_by = 10
+    template_name = "filter-sportwear-view.html"
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = ItemFilter(self.request.GET, queryset=Item.objects.filter(category__iexact='SW'))
+        return context
+
+    def get_queryset(self, *args, **kwargs):
+        try:
+            a = self.request.GET.get('search_item',)
+        except KeyError:
+            a = None
+        if a:
+            item_list = Item.objects.filter(
+                title__icontains=a,
+            )
+        else:
+            item_list = Item.objects.all()
+        return item_list
     
 class HomeView(ListView):
     model = Item
@@ -409,21 +431,29 @@ def process_payment(request):
 
 @csrf_exempt
 def payment_done(request):
-    order = Order.objects.get(user=request.user, ordered=False)
-    order_items = order.items.all()
-    order_items.update(ordered=True)
-    for item in order_items:
-        item.save()
-
-    order.ordered = True
-    order.save()
-
-    payment = Payment()
-    payment.paypal_charge_id = create_ref_code()
-    payment.user = request.user
-    payment.amount = order.get_total()
-    payment.save()
-    return render(request, 'payment-done.html')
+    try:
+        order = Order.objects.get(user=request.user, ordered=False)
+        order_items = order.items.all()
+        order_items.update(ordered=True)
+        for item in order_items:
+            item.save()
+        order.ordered = True
+        
+        payment = Payment()
+        payment.paypal_charge_id = create_ref_code()
+        payment.user = request.user
+        payment.amount = order.get_total()
+        payment.save()
+   
+        order.payment = payment
+        order.ref_code = create_ref_code()
+        order.save()
+            
+        messages.success(request, "Your order was successful")
+        return render(request, 'payment-done.html')
+    except:
+        messages.warning(request, "Something went wrong")
+        return render(request, 'home-page.html')
 
 @csrf_exempt
 def payment_cancelled(request):
